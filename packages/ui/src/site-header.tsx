@@ -25,9 +25,14 @@ export function SiteHeader({
             </span>
           </span>
         </SharedLink>
-        <span className="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:block">
-          Tehran · 1 room
-        </span>
+        <div className="flex items-center gap-3 sm:gap-5">
+          <SharedLink className="text-sm font-bold text-slate-600 transition hover:text-sky-600" href="/about">
+            Our story
+          </SharedLink>
+          <span className="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:block">
+            Tehran · 1 room
+          </span>
+        </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-5 pb-6 sm:px-8">

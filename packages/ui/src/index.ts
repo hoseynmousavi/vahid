@@ -9,3 +9,7 @@ export type { Hotel, HotelDetails, HotelSearchResult } from "./hotel-api";
 export { HotelPlp } from "./hotel-plp";
 export { HotelPdp } from "./hotel-pdp";
 export { NavigationProvider } from "./navigation";
+export { AboutPage } from "./about-page";
+export type { AboutContent } from "./about-page";
+export { ClientAboutPage } from "./about-page-client";
+export { ABOUT_API_URL, fetchAboutContent } from "./about-api";

@@ -6,6 +6,7 @@
     "node": ">=22.22.0"
   },
   "scripts": {
+    "api": "node server.js",
     "dev": "turbo dev",
     "dev:next": "pnpm --filter @stack/next dev",
     "dev:react-router": "pnpm --filter @stack/react-router dev",
