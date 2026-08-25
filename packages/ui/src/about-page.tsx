@@ -154,7 +154,13 @@ function EditorialCollage({ content }: { content: AboutContent["artwork"] }) {
   );
 }
 
-export function AboutPage({ content }: { content: AboutContent }) {
+export function AboutPage({
+  content,
+  supplemental,
+}: {
+  content: AboutContent;
+  supplemental?: ReactNode;
+}) {
   return (
     <main className="min-h-screen overflow-hidden bg-[#fffaf1] text-[#17352b] selection:bg-[#f6c453] selection:text-[#17352b]">
       <header className="relative z-20 border-b border-[#17352b]/10">
@@ -356,6 +362,8 @@ export function AboutPage({ content }: { content: AboutContent }) {
           </ol>
         </div>
       </section>
+
+      {supplemental}
 
       <section className="px-5 pb-5 sm:px-8 sm:pb-8">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] bg-[#f6c453] px-6 py-20 text-center sm:px-12 sm:py-24">

@@ -1,12 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { fetchAboutContent } from "./about-api";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  fetchAboutContent,
+  fetchAboutSpotlight,
+  type AboutSpotlightContent,
+} from "./about-api";
 import { AboutPage, type AboutContent } from "./about-page";
-import { SharedLink } from "./navigation";
+import {
+  AboutSpotlight,
+  AboutSpotlightLoading,
+} from "./about-spotlight";
+import {
+  SharedLink,
+  useSharedPendingNavigation,
+} from "./navigation";
 
-export function AboutPageLoading() {
+export function AboutPageLoading({ children }: { children?: ReactNode } = {}) {
   return (
     <main
       aria-busy="true"
@@ -42,19 +53,121 @@ export function AboutPageLoading() {
         </div>
         <div className="aspect-[4/5] w-full max-w-[570px] animate-pulse rounded-[2.5rem] bg-[#d9e6de]" />
       </section>
+      {children}
       <span className="sr-only">Loading the About page</span>
     </main>
   );
 }
 
+function useAboutSpotlight(
+  initialData?: AboutSpotlightContent,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["about-spotlight"],
+    queryFn: ({ signal }) =>
+      fetchAboutSpotlight({ cache: "no-store", signal }),
+    initialData,
+    enabled,
+  });
+}
+
+function SpotlightResult({
+  spotlight,
+}: {
+  spotlight: ReturnType<typeof useAboutSpotlight>;
+}) {
+  if (spotlight.isPending) {
+    return <AboutSpotlightLoading />;
+  }
+
+  if (spotlight.isError) {
+    return (
+      <section className="bg-rose-950 px-5 py-16 text-center text-white">
+        <p className="font-bold">We couldn’t load the network spotlight.</p>
+        <p className="mt-2 text-sm text-rose-200">
+          {spotlight.error.message}
+        </p>
+        <button
+          className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-rose-950"
+          onClick={() => spotlight.refetch()}
+          type="button"
+        >
+          Try again
+        </button>
+      </section>
+    );
+  }
+
+  return <AboutSpotlight content={spotlight.data} />;
+}
+
+function AboutError({
+  error,
+  retry,
+}: {
+  error: Error;
+  retry: () => void;
+}) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#fffaf1] px-5 text-center text-[#17352b]">
+      <div className="max-w-md rounded-[2rem] border border-[#df765c]/30 bg-white/60 p-8">
+        <h1 className="text-2xl font-black">We couldn’t load our story.</h1>
+        <p className="mt-3 text-[#60736c]">{error.message}</p>
+        <button
+          className="mt-6 rounded-full bg-[#17352b] px-6 py-3 text-sm font-bold text-white"
+          onClick={retry}
+          type="button"
+        >
+          Try again
+        </button>
+      </div>
+    </main>
+  );
+}
+
+export function AboutNavigationPreview() {
+  const about = useQuery({
+    queryKey: ["about-navigation-preview"],
+    queryFn: ({ signal }) =>
+      fetchAboutContent({ cache: "no-store", signal }),
+    gcTime: 0,
+    staleTime: 0,
+  });
+  const spotlight = useQuery({
+    queryKey: ["about-spotlight-navigation-preview"],
+    queryFn: ({ signal }) =>
+      fetchAboutSpotlight({ cache: "no-store", signal }),
+    gcTime: 0,
+    staleTime: 0,
+  });
+  const spotlightSection = <SpotlightResult spotlight={spotlight} />;
+
+  if (about.isPending) {
+    return <AboutPageLoading>{spotlightSection}</AboutPageLoading>;
+  }
+
+  if (about.isError) {
+    return <AboutError error={about.error} retry={() => about.refetch()} />;
+  }
+
+  return <AboutPage content={about.data} supplemental={spotlightSection} />;
+}
+
 export function ClientAboutPage({
   initialContent,
+  initialSpotlight,
 }: {
   initialContent?: AboutContent;
+  initialSpotlight?: AboutSpotlightContent;
 }) {
   const [mounted, setMounted] = useState(false);
+  const { completeNavigation } = useSharedPendingNavigation();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    completeNavigation?.();
+  }, [completeNavigation]);
 
   const about = useQuery({
     queryKey: ["about"],
@@ -63,28 +176,19 @@ export function ClientAboutPage({
     initialData: initialContent,
     enabled: initialContent !== undefined || mounted,
   });
+  const spotlight = useAboutSpotlight(
+    initialSpotlight,
+    initialSpotlight !== undefined || mounted,
+  );
+  const spotlightSection = <SpotlightResult spotlight={spotlight} />;
 
   if (about.isPending) {
-    return <AboutPageLoading />;
+    return <AboutPageLoading>{spotlightSection}</AboutPageLoading>;
   }
 
   if (about.isError) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-[#fffaf1] px-5 text-center text-[#17352b]">
-        <div className="max-w-md rounded-[2rem] border border-[#df765c]/30 bg-white/60 p-8">
-          <h1 className="text-2xl font-black">We couldn’t load our story.</h1>
-          <p className="mt-3 text-[#60736c]">{about.error.message}</p>
-          <button
-            className="mt-6 rounded-full bg-[#17352b] px-6 py-3 text-sm font-bold text-white"
-            onClick={() => about.refetch()}
-            type="button"
-          >
-            Try again
-          </button>
-        </div>
-      </main>
-    );
+    return <AboutError error={about.error} retry={() => about.refetch()} />;
   }
 
-  return <AboutPage content={about.data} />;
+  return <AboutPage content={about.data} supplemental={spotlightSection} />;
 }

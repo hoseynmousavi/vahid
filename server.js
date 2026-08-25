@@ -97,6 +97,18 @@ const aboutContent = {
     },
 }
 
+const aboutSpotlightContent = {
+    eyebrow: "Live from our network",
+    title: "Small hotels, meaningful local impact.",
+    description:
+        "A second API powers this section so its loading state can resolve independently during client navigation.",
+    items: [
+        {value: "68%", label: "independently owned stays"},
+        {value: "31", label: "neighbourhood guides"},
+        {value: "12m", label: "average partner response time"},
+    ],
+}
+
 function acceptsEncoding(header, encoding) {
     return header
         .split(",")
@@ -165,9 +177,17 @@ const server = http.createServer((request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/about") {
         setTimeout(() => {
-            console.log("i've been called")
+            console.log("about API called")
             sendJson(request, response, 200, {data: aboutContent})
         }, 3000)
+        return
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/about-spotlight") {
+        setTimeout(() => {
+            console.log("about spotlight API called")
+            sendJson(request, response, 200, {data: aboutSpotlightContent})
+        }, 7000)
         return
     }
 

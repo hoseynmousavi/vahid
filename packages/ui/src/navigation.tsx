@@ -24,7 +24,10 @@ type LinkProps = {
 };
 type NavigationContextValue = {
   LinkComponent?: ComponentType<LinkProps>;
+  beginNavigation: Navigate;
+  completeNavigation: () => void;
   navigate: Navigate;
+  pendingHref: string | null;
   search: string | null;
   syncSearch: Navigate;
 };
@@ -37,6 +40,15 @@ export function useSharedNavigate() {
 
 export function useSharedSearch() {
   return useContext(NavigationContext)?.search ?? null;
+}
+
+export function useSharedPendingNavigation() {
+  const navigation = useContext(NavigationContext);
+
+  return {
+    completeNavigation: navigation?.completeNavigation,
+    pendingHref: navigation?.pendingHref ?? null,
+  };
 }
 
 export function NavigationProvider({
@@ -58,6 +70,7 @@ export function NavigationProvider({
         },
       }),
   );
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [search, setSearch] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +86,19 @@ export function NavigationProvider({
   const syncSearch = useCallback((href: string) => {
     setSearch(new URL(href, window.location.href).search);
   }, []);
+  const beginNavigation = useCallback((href: string) => {
+    setPendingHref(href);
+  }, []);
+  const completeNavigation = useCallback(() => {
+    setPendingHref(null);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingHref) return;
+
+    const timeout = window.setTimeout(completeNavigation, 15_000);
+    return () => window.clearTimeout(timeout);
+  }, [completeNavigation, pendingHref]);
 
   const sharedNavigate = useCallback(
     (href: string) => {
@@ -85,11 +111,22 @@ export function NavigationProvider({
   const value = useMemo(
     () => ({
       LinkComponent: linkComponent,
+      beginNavigation,
+      completeNavigation,
       navigate: sharedNavigate,
+      pendingHref,
       search,
       syncSearch,
     }),
-    [linkComponent, search, sharedNavigate, syncSearch],
+    [
+      beginNavigation,
+      completeNavigation,
+      linkComponent,
+      pendingHref,
+      search,
+      sharedNavigate,
+      syncSearch,
+    ],
   );
 
   return (
@@ -125,6 +162,15 @@ export function SharedLink({
     }
 
     if (LinkComponent) {
+      const target = new URL(href, window.location.href);
+
+      if (
+        target.origin === window.location.origin &&
+        target.pathname !== window.location.pathname
+      ) {
+        navigation.beginNavigation(href);
+      }
+
       navigation.syncSearch(href);
       return;
     }

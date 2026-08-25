@@ -1,11 +1,10 @@
 import {
-  AboutPageLoading,
   ClientAboutPage,
   fetchAboutContent,
+  fetchAboutSpotlight,
 } from "@stack/ui";
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Our Story | Stayfinder",
@@ -13,17 +12,19 @@ export const metadata: Metadata = {
     "Meet Stayfinder and discover how we make memorable stays easier to find.",
 };
 
-async function AboutContent() {
+export const instant = false;
+
+export default async function About() {
   await connection();
-  const content = await fetchAboutContent({ cache: "no-store" });
+  const [content, spotlight] = await Promise.all([
+    fetchAboutContent({ cache: "no-store" }),
+    fetchAboutSpotlight({ cache: "no-store" }),
+  ]);
 
-  return <ClientAboutPage initialContent={content} />;
-}
-
-export default function About() {
   return (
-    <Suspense fallback={<AboutPageLoading />}>
-      <AboutContent />
-    </Suspense>
+    <ClientAboutPage
+      initialContent={content}
+      initialSpotlight={spotlight}
+    />
   );
 }

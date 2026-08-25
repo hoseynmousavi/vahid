@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "Compare Tehran hotels, ratings, rooms, and nightly prices.",
 };
 
-export const instant = true;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">

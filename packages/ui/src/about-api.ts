@@ -1,6 +1,15 @@
 import type { AboutContent } from "./about-page";
 
 export const ABOUT_API_URL = "http://localhost:4000/api/about";
+export const ABOUT_SPOTLIGHT_API_URL =
+  "http://localhost:4000/api/about-spotlight";
+
+export type AboutSpotlightContent = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  items: Array<{ value: string; label: string }>;
+};
 
 export async function fetchAboutContent(
     init?: RequestInit,
@@ -19,6 +28,26 @@ export async function fetchAboutContent(
 
   if (!payload.data) {
     throw new Error("The About API returned an invalid response");
+  }
+
+  return payload.data;
+}
+
+export async function fetchAboutSpotlight(
+  init?: RequestInit,
+): Promise<AboutSpotlightContent> {
+  const response = await fetch(ABOUT_SPOTLIGHT_API_URL, init);
+
+  if (!response.ok) {
+    throw new Error(`About spotlight API failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    data?: AboutSpotlightContent;
+  };
+
+  if (!payload.data) {
+    throw new Error("The About spotlight API returned an invalid response");
   }
 
   return payload.data;
