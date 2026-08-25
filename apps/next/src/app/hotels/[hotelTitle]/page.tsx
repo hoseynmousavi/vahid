@@ -1,14 +1,15 @@
 import {
-  fetchHotelDetails,
   getDefaultStayDates,
   getStayDatesFromSearch,
   hasStayDateParams,
   HotelPdp,
   normalizeHotelTitle,
 } from "@stack/ui";
+import { getCachedHotelDetails } from "@/app/hotel-data";
 import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 
-export const revalidate = 1;
+export const instant = false;
 
 type HotelPageProps = {
   params: Promise<{ hotelTitle: string }>;
@@ -30,36 +31,49 @@ export async function generateMetadata({ params }: HotelPageProps): Promise<Meta
 export default async function HotelPage({ params, searchParams }: HotelPageProps) {
   const [{ hotelTitle }, query] = await Promise.all([params, searchParams]);
   const normalizedHotelTitle = normalizeHotelTitle(hotelTitle);
+
+  return getCachedHotelPage(
+    normalizedHotelTitle,
+    typeof query.startDate === "string" ? query.startDate : undefined,
+    typeof query.endDate === "string" ? query.endDate : undefined,
+  );
+}
+
+async function getCachedHotelPage(
+  hotelTitle: string,
+  startDate?: string,
+  endDate?: string,
+) {
+  "use cache";
+
+  cacheLife("hours");
+  cacheTag(`tehran-hotel-${hotelTitle}`);
+
   const defaultDates = getDefaultStayDates();
   const search = new URLSearchParams();
-  if (typeof query.startDate === "string") search.set("startDate", query.startDate);
-  if (typeof query.endDate === "string") search.set("endDate", query.endDate);
+  if (startDate) search.set("startDate", startDate);
+  if (endDate) search.set("endDate", endDate);
   const queryDates = getStayDatesFromSearch(search.toString());
 
-  if (hasStayDateParams(query.startDate, query.endDate)) {
+  if (hasStayDateParams(startDate, endDate)) {
     return (
       <HotelPdp
         defaultDates={defaultDates}
         framework="Next.js"
-        hotelTitle={normalizedHotelTitle}
+        hotelTitle={hotelTitle}
         queryDates={queryDates}
         serverData={null}
       />
     );
   }
 
-  const serverData = await fetchHotelDetails(normalizedHotelTitle, {
-    next: {
-      revalidate,
-      tags: [`tehran-hotel-${normalizedHotelTitle}`],
-    },
-  });
+  const serverData = await getCachedHotelDetails(hotelTitle);
 
   return (
     <HotelPdp
       defaultDates={defaultDates}
       framework="Next.js"
-      hotelTitle={normalizedHotelTitle}
+      hotelTitle={hotelTitle}
       serverData={serverData}
     />
   );

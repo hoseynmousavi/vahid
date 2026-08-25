@@ -1,26 +1,39 @@
 import {
-  fetchHotels,
   getDefaultStayDates,
   getStayDatesFromSearch,
   hasStayDateParams,
   HotelPlp,
 } from "@stack/ui";
+import { getCachedHotels } from "@/app/hotel-data";
+import { cacheLife, cacheTag } from "next/cache";
 
-export const revalidate = 1;
+export const instant = false;
 
 type HomeProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const defaultDates = getDefaultStayDates();
   const params = await searchParams;
+
+  return getCachedHomePage(
+    typeof params.startDate === "string" ? params.startDate : undefined,
+    typeof params.endDate === "string" ? params.endDate : undefined,
+  );
+}
+
+async function getCachedHomePage(startDate?: string, endDate?: string) {
+  "use cache";
+
+  cacheLife("seconds");
+
+  const defaultDates = getDefaultStayDates();
   const query = new URLSearchParams();
-  if (typeof params.startDate === "string") query.set("startDate", params.startDate);
-  if (typeof params.endDate === "string") query.set("endDate", params.endDate);
+  if (startDate) query.set("startDate", startDate);
+  if (endDate) query.set("endDate", endDate);
   const queryDates = getStayDatesFromSearch(query.toString());
 
-  if (hasStayDateParams(params.startDate, params.endDate)) {
+  if (hasStayDateParams(startDate, endDate)) {
     return (
       <HotelPlp
         defaultDates={defaultDates}
@@ -31,12 +44,8 @@ export default async function Home({ searchParams }: HomeProps) {
     );
   }
 
-  const serverData = await fetchHotels(defaultDates, {
-    next: {
-      revalidate,
-      tags: [`tehran-hotels-${defaultDates.startDate}-${defaultDates.endDate}`],
-    },
-  });
+  cacheTag(`tehran-hotels-${defaultDates.startDate}-${defaultDates.endDate}`);
+  const serverData = await getCachedHotels(defaultDates);
 
   return (
     <HotelPlp
