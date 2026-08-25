@@ -1,0 +1,10 @@
+node_modules
+.turbo
+.next
+build
+.react-router
+*.tsbuildinfo
+.DS_Store
+.env*
+!.env.example
+.idea

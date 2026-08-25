@@ -1,0 +1,18 @@
+{
+  "name": "hotel-stack-comparison",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:next": "pnpm --filter @stack/next dev",
+    "dev:react-router": "pnpm --filter @stack/react-router dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "turbo": "2.10.11"
+  }
+}
