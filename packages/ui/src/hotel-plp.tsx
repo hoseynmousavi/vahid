@@ -2,6 +2,7 @@ import type { StayDates } from "./date-utils";
 import type { HotelSearchResult } from "./hotel-api";
 import { DatedHotelResults } from "./dated-hotel-results";
 import { SiteHeader } from "./site-header";
+import type { ReactNode } from "react";
 
 type HotelPlpProps = {
   defaultDates: StayDates;
@@ -17,16 +18,46 @@ export function HotelPlp({
   framework,
 }: HotelPlpProps) {
   return (
+    <HotelPlpShell defaultDates={defaultDates} framework={framework}>
+      <HotelPlpResults
+        defaultDates={defaultDates}
+        queryDates={queryDates}
+        serverData={serverData}
+      />
+    </HotelPlpShell>
+  );
+}
+
+export function HotelPlpShell({
+  children,
+  defaultDates,
+  framework,
+}: {
+  children: ReactNode;
+  defaultDates: StayDates;
+  framework: "Next.js" | "React Router";
+}) {
+  return (
     <main className="min-h-screen bg-[#f6f7f9] text-slate-950">
       <SiteHeader dates={defaultDates} framework={framework} />
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-        <DatedHotelResults
-          defaultDates={defaultDates}
-          initialQueryDates={queryDates}
-          serverData={serverData}
-        />
+        {children}
       </section>
     </main>
+  );
+}
+
+export function HotelPlpResults({
+  defaultDates,
+  queryDates,
+  serverData,
+}: Omit<HotelPlpProps, "framework">) {
+  return (
+    <DatedHotelResults
+      defaultDates={defaultDates}
+      initialQueryDates={queryDates}
+      serverData={serverData}
+    />
   );
 }

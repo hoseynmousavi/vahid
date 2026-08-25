@@ -7,15 +7,26 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ComponentType,
   type MouseEvent,
   type ReactNode,
 } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 type Navigate = (href: string) => void;
+type LinkProps = {
+  "aria-label"?: string;
+  children: ReactNode;
+  className?: string;
+  href: string;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  title?: string;
+};
 type NavigationContextValue = {
+  LinkComponent?: ComponentType<LinkProps>;
   navigate: Navigate;
   search: string | null;
+  syncSearch: Navigate;
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
@@ -30,9 +41,11 @@ export function useSharedSearch() {
 
 export function NavigationProvider({
   children,
+  linkComponent,
   navigate,
 }: {
   children: ReactNode;
+  linkComponent?: ComponentType<LinkProps>;
   navigate: Navigate;
 }) {
   const [queryClient] = useState(
@@ -57,17 +70,26 @@ export function NavigationProvider({
     return () => window.removeEventListener("popstate", syncFromBrowser);
   }, []);
 
+  const syncSearch = useCallback((href: string) => {
+    setSearch(new URL(href, window.location.href).search);
+  }, []);
+
   const sharedNavigate = useCallback(
     (href: string) => {
-      setSearch(new URL(href, window.location.href).search);
+      syncSearch(href);
       navigate(href);
     },
-    [navigate],
+    [navigate, syncSearch],
   );
 
   const value = useMemo(
-    () => ({ navigate: sharedNavigate, search }),
-    [search, sharedNavigate],
+    () => ({
+      LinkComponent: linkComponent,
+      navigate: sharedNavigate,
+      search,
+      syncSearch,
+    }),
+    [linkComponent, search, sharedNavigate, syncSearch],
   );
 
   return (
@@ -85,18 +107,13 @@ export function SharedLink({
   className,
   href,
   title,
-}: {
-  "aria-label"?: string;
-  children: ReactNode;
-  className?: string;
-  href: string;
-  title?: string;
-}) {
-  const navigate = useSharedNavigate();
+}: LinkProps) {
+  const navigation = useContext(NavigationContext);
+  const LinkComponent = navigation?.LinkComponent;
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     if (
-      !navigate ||
+      !navigation?.navigate ||
       event.defaultPrevented ||
       event.button !== 0 ||
       event.metaKey ||
@@ -107,8 +124,27 @@ export function SharedLink({
       return;
     }
 
+    if (LinkComponent) {
+      navigation.syncSearch(href);
+      return;
+    }
+
     event.preventDefault();
-    navigate(href);
+    navigation.navigate(href);
+  }
+
+  if (LinkComponent) {
+    return (
+      <LinkComponent
+        aria-label={ariaLabel}
+        className={className}
+        href={href}
+        onClick={handleClick}
+        title={title}
+      >
+        {children}
+      </LinkComponent>
+    );
   }
 
   return (

@@ -1,25 +1,29 @@
-import {AboutPage, type AboutContent} from "./about-page"
-import type {Metadata} from "next"
-import {cacheLife} from "next/cache"
+import {
+  AboutPageLoading,
+  ClientAboutPage,
+  fetchAboutContent,
+} from "@stack/ui";
+import type { Metadata } from "next";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
-    title: "Our Story | Stayfinder",
-    description: "Meet Stayfinder and discover how we make memorable stays easier to find.",
+  title: "Our Story | Stayfinder",
+  description:
+    "Meet Stayfinder and discover how we make memorable stays easier to find.",
+};
+
+async function AboutContent() {
+  await connection();
+  const content = await fetchAboutContent({ cache: "no-store" });
+
+  return <ClientAboutPage initialContent={content} />;
 }
 
-export const instant = false
-
-export default async function About() {
-    "use cache"
-    cacheLife({revalidate: 10})
-    console.log("page")
-    const response = await fetch(
-        `http://localhost:4000/api/about?ok`,
-        {cache: "no-store"},
-    )
-
-    const payload = (await response.json()) as { data: AboutContent }
-
-    return <AboutPage content={payload.data}/>
+export default function About() {
+  return (
+    <Suspense fallback={<AboutPageLoading />}>
+      <AboutContent />
+    </Suspense>
+  );
 }
-

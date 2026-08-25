@@ -7,6 +7,20 @@ import { fetchHotelDetails, type HotelDetails } from "./hotel-api";
 import { HotelDetailsView } from "./hotel-details-view";
 import { useSharedSearch } from "./navigation";
 
+export function HotelDetailsLoading() {
+  return (
+    <div aria-live="polite">
+      <div className="aspect-[16/7] animate-pulse rounded-3xl bg-slate-200" />
+      <div className="mt-8 grid gap-4">
+        <div className="h-10 w-2/3 animate-pulse rounded-xl bg-slate-200" />
+        <div className="h-5 w-full animate-pulse rounded bg-slate-100" />
+        <div className="h-5 w-4/5 animate-pulse rounded bg-slate-100" />
+      </div>
+      <span className="sr-only">Loading hotel details</span>
+    </div>
+  );
+}
+
 export function DatedHotelDetails({
   defaultDates,
   hotelTitle,
@@ -36,17 +50,7 @@ export function DatedHotelDetails({
   });
 
   if (hotel.isPending) {
-    return (
-      <div aria-live="polite">
-        <div className="aspect-[16/7] animate-pulse rounded-3xl bg-slate-200" />
-        <div className="mt-8 grid gap-4">
-          <div className="h-10 w-2/3 animate-pulse rounded-xl bg-slate-200" />
-          <div className="h-5 w-full animate-pulse rounded bg-slate-100" />
-          <div className="h-5 w-4/5 animate-pulse rounded bg-slate-100" />
-        </div>
-        <span className="sr-only">Loading hotel details</span>
-      </div>
-    );
+    return <HotelDetailsLoading />;
   }
 
   if (hotel.isError) {
